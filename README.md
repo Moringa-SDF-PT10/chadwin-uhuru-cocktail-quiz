@@ -1,7 +1,5 @@
 # chadwin-uhuru-cocktail-quiz
 
-# Kenyan Cocktail Quiz
-
 An interactive quiz game testing knowledge of Kenya's famous cocktails, featuring Dawa, Kenya Cane, and more
 
 ## Features
