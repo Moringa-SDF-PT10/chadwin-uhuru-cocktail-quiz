@@ -1,10 +1,6 @@
-/* Main Styles */
 body {
     font-family: 'Arial', sans-serif;
-    background-image: url('assets/images/background.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background-color: #f0f2f5;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -14,14 +10,13 @@ body {
   }
   
   .container {
-    background: rgba(255, 255, 255, 0.9);
+    background: white;
     border-radius: 15px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     padding: 2rem;
     width: 90%;
     max-width: 600px;
     text-align: center;
-    backdrop-filter: blur(5px);
   }
   
   .screen {
@@ -35,7 +30,21 @@ body {
     display: none;
   }
   
-  /* Image Container */
+  .quiz-header, .quiz-footer {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin: 10px 0;
+  }
+  
+  #category-select {
+    padding: 8px;
+    border-radius: 5px;
+    margin: 10px 0;
+    width: 100%;
+    max-width: 300px;
+  }
+  
   .image-container {
     width: 200px;
     height: 200px;
@@ -52,7 +61,6 @@ body {
     object-fit: cover;
   }
   
-  /* Buttons */
   button {
     background: #006644;
     color: white;
@@ -70,7 +78,6 @@ body {
     transform: translateY(-2px);
   }
   
-  /* Options/Answer Choices */
   #options-container {
     display: flex;
     flex-direction: column;
@@ -86,7 +93,7 @@ body {
     cursor: pointer;
     transition: all 0.2s;
     font-size: 0.9rem;
-    color: #000000; /* Black text for normal state */
+    color: #000000;
   }
   
   .option-btn:hover {
@@ -94,20 +101,54 @@ body {
     border-color: #006644;
   }
   
-  /* Correct/Wrong Answer States */
   .option-btn.correct {
     background: #006644;
     border-color: #006644;
-    color: white; /* White text for better contrast on green */
+    color: white;
   }
   
   .option-btn.wrong {
     background: #BB0000;
     border-color: #BB0000;
-    color: white; /* White text for better contrast on red */
+    color: white;
   }
   
-  /* Animations */
+  #hint-btn {
+    background: #FFC107;
+    color: #000;
+  }
+  
+  #hint-btn:hover {
+    background: #FFA000;
+  }
+  
+  #next-btn {
+    background: #2196F3;
+  }
+  
+  #next-btn:hover {
+    background: #1976D2;
+  }
+  
+  #timer {
+    font-weight: bold;
+    color: #F44336;
+  }
+  
+  .result-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  
+  #menu-btn {
+    background: #9E9E9E;
+  }
+  
+  #menu-btn:hover {
+    background: #757575;
+  }
+  
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -117,7 +158,6 @@ body {
     animation: fadeIn 0.5s ease-out;
   }
   
-  /* Responsive Design */
   @media (max-width: 500px) {
     .container {
       padding: 1.5rem;
@@ -132,4 +172,40 @@ body {
       padding: 0.7rem;
       font-size: 0.85rem;
     }
+    
+    .result-buttons {
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+  }
+
+  body {
+    font-family: 'Arial', sans-serif;
+    background-image: url('assets/images/background.jpg');
+    /* Multiple fallbacks */
+    background-image: 
+      url('assets/images/background.jpg'),
+      linear-gradient(to bottom, #f0f2f5, #d0d5db);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    color: #333;
+  }
+  
+  /* If image fails to load */
+  body:before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(240, 242, 245, 0.8);
+    z-index: -1;
   }
