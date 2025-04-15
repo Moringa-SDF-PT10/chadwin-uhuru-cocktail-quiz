@@ -8,14 +8,21 @@
 </head>
 <body>
   <div class="container">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="screen">
+      <div class="loader"></div>
+      <p id="loading-text">Loading cocktail data...</p>
+    </div>
+
     <!-- Start Screen -->
     <div id="start-screen" class="screen">
       <h1>Kenyan Cocktail Quiz 🇰🇪</h1>
-      <p>Test your knowledge of Kenya's most famous drinks!</p>
+      <p>Test your knowledge of global and Kenyan cocktails!</p>
       
-      <label for="category-select">Choose a category:</label>
+      <label for="category-select">Choose mode:</label>
       <select id="category-select">
-        <!-- Options will be added by JavaScript -->
+        <option value="api">Global Cocktails (Online)</option>
+        <option value="local">Kenyan Cocktails Only</option>
       </select>
       
       <button id="start-btn">Start Quiz</button>
