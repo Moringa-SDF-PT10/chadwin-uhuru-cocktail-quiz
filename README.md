@@ -1,42 +1,37 @@
-# chadwin-uhuru-cocktail-quiz
+# 🍹 Kenyan Cocktail Quiz 🇰🇪
 
-An interactive quiz game testing knowledge of Kenya's famous cocktails, featuring Dawa, Kenya Cane, and more
+Test your knowledge of global and Kenyan cocktails with this interactive quiz web app!
 
-## Features
+![Quiz Screenshot](./assets/images/quiz-screenshot.png) *Replace with your actual screenshot*
 
-- **Multiple Categories**:
-  - Ingredients Quiz
-  - Glassware Identification
-  - Alcoholic/Non-Alcoholic
-  - Cocktail Image Recognition
+## Features ✨
 
-- **Game Mechanics**:
-  - 15-second timer per question
-  - Hint system (3 uses per game)
-  - Score tracking
-  - Performance feedback
+- 🌍 Two quiz modes: Global Cocktails (API) or Kenyan Cocktails Only
+- 🖼️ Cocktail images with each question
+- ⏱️ 15-second timer per question
+- 💡 Hint system (removes 2 wrong answers)
+- 📊 Score tracking and final results
+- 📱 Fully responsive design
+- 🇰🇪 Special Kenyan cocktails included:
+  - Dawa
+  - Kenya Cane
+  - Tusker Mojito
+  - Virgin Dawa
+  - Masala Chai
 
-- **Kenyan Focus**:
-  - Authentic recipes
-  - Local ingredients
-  - Cultural references
-
-## Technologies Used
+## Technologies Used 🛠️
 
 - HTML
 - CSS
 - JavaScript
-- GitHub Pages (Deployment)
+- [TheCocktailDB API](https://www.thecocktaildb.com/api.php)
 
-## How to Play
+## How to Use 🚀
 
-1. Select a quiz category
-2. Answer 10 questions before time runs out
-3. Use hints when stuck (limited)
-4. Review your score and try to beat it!
+1. **Online Version**:
+   - [Visit [GitHub Pages Link](https://github.com/Moringa-SDF-PT10/chadwin-uhuru-cocktail-quiz)
 
-## Installation (Local Development)
-
-```bash
-git clone https://github.com/Moringa-SDF-PT10/chadwin-uhuru-cocktail-quiz.git
+2. **Local Development**:
+   ```bash
+  git clone https://github.com/Moringa-SDF-PT10/chadwin-uhuru-cocktail-quiz.git
 cd chadwin-uhuru-cocktail-quiz
