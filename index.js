@@ -1,7 +1,9 @@
-// DOM functions
+// DOM Elements
 const startScreen = document.getElementById("start-screen");
 const quizScreen = document.getElementById("quiz-screen");
 const resultsScreen = document.getElementById("results-screen");
+const loadingScreen = document.getElementById("loading-screen");
+const loadingText = document.getElementById("loading-text");
 const startBtn = document.getElementById("start-btn");
 const restartBtn = document.getElementById("restart-btn");
 const menuBtn = document.getElementById("menu-btn");
@@ -16,57 +18,69 @@ const timerEl = document.getElementById("timer");
 const nextBtn = document.getElementById("next-btn");
 const hintBtn = document.getElementById("hint-btn");
 
-// Game features
-let currentQuestionIndex = 0;
-let score = 0;
-let questions = [];
-let timer;
-let timeRemaining = 15;
-let totalTime = 0;
-let quizStartTime;
-let selectedCategory = "all";
-let hintUsed = false;
+// API
+const API_URL = "https://www.thecocktaildb.com/api/json/v1/1";
 
-// Kenyan Cocktail list
+// Kenyan Cocktails //
 const kenyanCocktails = [
-  {
-    name: "Dawa",
-    ingredients: ["Vodka", "Honey", "Lime", "Sugar"],
-    glass: "Highball Glass",
-    image: "dawa.jpeg",
-    alcoholic: true
-  },
-  {
-    name: "Kenya Cane",
-    ingredients: ["Cane Spirit", "Pineapple Juice", "Lemon", "Mint"],
-    glass: "Collins Glass",
-    image: "kenya-cane.jpg",
-    alcoholic: true
-  },
-  {
-    name: "Tusker Mojito",
-    ingredients: ["Tusker Lager", "Mint", "Lime", "Sugar"],
-    glass: "Pint Glass",
-    image: "tusker-mojito.jpg",
-    alcoholic: true
-  },
-  {
-    name: "Masala Chai Martini",
-    ingredients: ["Chai Tea", "Milk", "Honey", "Cinnamon"],
-    glass: "Martini Glass",
-    image: "masala-chai.webp",
-    alcoholic: false
-  },
-  {
-    name: "Virgin Dawa",
-    ingredients: ["Honey", "Lime", "Sugar", "Soda Water"],
-    glass: "Highball Glass",
-    image: "virgin-dawa.jpeg",
-    alcoholic: false
-  }
-];
-
-// cocktail Glass Types
+    {
+      idDrink: "1",
+      strDrink: "Dawa",
+      strGlass: "Highball Glass",
+      strAlcoholic: "Alcoholic",
+      strDrinkThumb: "assets/images/dawa.jpeg",
+      strIngredient1: "Vodka",
+      strIngredient2: "Honey",
+      strIngredient3: "Lime",
+      strIngredient4: "Sugar"
+    },
+    {
+      idDrink: "2",
+      strDrink: "Kenya Cane",
+      strGlass: "Collins Glass",
+      strAlcoholic: "Alcoholic",
+      strDrinkThumb: "assets/images/kenya-cane.jpg",
+      strIngredient1: "Cane Spirit",
+      strIngredient2: "Pineapple Juice",
+      strIngredient3: "Lemon",
+      strIngredient4: "Mint"
+    },
+    {
+      idDrink: "3",
+      strDrink: "Tusker Mojito",
+      strGlass: "Pint Glass",
+      strAlcoholic: "Alcoholic",
+      strDrinkThumb: "assets/images/tusker-mojito.jpg",
+      strIngredient1: "Tusker Lager",
+      strIngredient2: "Mint",
+      strIngredient3: "Lime",
+      strIngredient4: "Sugar"
+    },
+    {
+      idDrink: "4",
+      strDrink: "Virgin Dawa",
+      strGlass: "Highball Glass",
+      strAlcoholic: "Non-Alcoholic",
+      strDrinkThumb: "assets/images/virgin-dawa.jpeg",
+      strIngredient1: "Honey",
+      strIngredient2: "Lime",
+      strIngredient3: "Sugar",
+      strIngredient4: "Soda Water"
+    },
+    {
+      idDrink: "5",
+      strDrink: "Masala Chai",
+      strGlass: "Tea Cup",
+      strAlcoholic: "Non-Alcoholic",
+      strDrinkThumb: "assets/images/masala-chai.webp",
+      strIngredient1: "Tea Leaves",
+      strIngredient2: "Milk",
+      strIngredient3: "Ginger",
+      strIngredient4: "Cardamom",
+      strIngredient5: "Cinnamon"
+    }
+  ];
+// Glassware Types
 const ALL_GLASS_TYPES = [
   "Martini Glass", 
   "Highball Glass", 
@@ -79,32 +93,20 @@ const ALL_GLASS_TYPES = [
   "Margarita Glass"
 ];
 
-// Wrong ingredients
-const wrongIngredients = [
-  "Whiskey", "Tequila", "Blue Curacao", 
-  "Soya Sauce", "Ketchup", "Coffee",
-  "Milk", "Egg White", "Worcestershire Sauce"
-];
-
-// Categories
-const categories = {
-  all: "All Questions",
-  ingredients: "Ingredients Quiz",
-  glassware: "Glassware Quiz",
-  alcoholic: "Alcoholic/Non-Alcoholic",
-  image: "Guess the Cocktail"
-};
+// Game State
+let currentQuestionIndex = 0;
+let score = 0;
+let questions = [];
+let timer;
+let timeRemaining = 15;
+let totalTime = 0;
+let quizStartTime;
+let selectedMode = "api";
+let hintUsed = false;
+let allIngredients = [];
 
 // Initialize the questions
 function initQuiz() {
-  // Set up category selection
-  for (const [id, name] of Object.entries(categories)) {
-    const option = document.createElement("option");
-    option.value = id;
-    option.textContent = name;
-    categorySelect.appendChild(option);
-  }
-  
   // Event listeners
   startBtn.addEventListener("click", startQuiz);
   restartBtn.addEventListener("click", restartQuiz);
@@ -112,16 +114,72 @@ function initQuiz() {
   nextBtn.addEventListener("click", nextQuestion);
   hintBtn.addEventListener("click", showHint);
   categorySelect.addEventListener("change", (e) => {
-    selectedCategory = e.target.value;
+    selectedMode = e.target.value;
+  });
+  
+  // Preload ingredients list
+  fetchIngredientsList().then(ingredients => {
+    allIngredients = ingredients;
   });
 }
 
-// have unique glass options
+// Fetch with timeout
+async function fetchWithTimeout(url, timeout = 3000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out');
+    }
+    throw error;
+  }
+}
+
+// Fetch random cocktail
+async function fetchRandomCocktail() {
+  if (selectedMode === "local") {
+    return kenyanCocktails[Math.floor(Math.random() * kenyanCocktails.length)];
+  }
+
+  try {
+    loadingText.textContent = "Fetching global cocktails...";
+    const response = await fetchWithTimeout(`${API_URL}/random.php`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.drinks[0];
+  } catch (error) {
+    console.error("API failed:", error);
+    loadingText.textContent = "Using Kenyan cocktails...";
+    return kenyanCocktails[Math.floor(Math.random() * kenyanCocktails.length)];
+  }
+}
+
+// Get all ingredients
+async function fetchIngredientsList() {
+  try {
+    const response = await fetch(`${API_URL}/list.php?i=list`);
+    const data = await response.json();
+    return data.drinks.map(item => item.strIngredient1);
+  } catch (error) {
+    console.error("Failed to fetch ingredients:", error);
+    return ["Vodka", "Gin", "Rum", "Tequila", "Whiskey", "Honey", "Lime"];
+  }
+}
+
+// Get unique glass options
 function getUniqueGlassOptions(correctGlass) {
   const incorrectGlasses = ALL_GLASS_TYPES.filter(g => g !== correctGlass);
   const selected = [];
   
-  // Select 3 unique incorrect glasses
   while (selected.length < 3 && incorrectGlasses.length > 0) {
     const randomIndex = Math.floor(Math.random() * incorrectGlasses.length);
     selected.push(incorrectGlasses.splice(randomIndex, 1)[0]);
@@ -130,253 +188,261 @@ function getUniqueGlassOptions(correctGlass) {
   return [...selected, correctGlass].sort(() => Math.random() - 0.5);
 }
 
-// Get wrong ingredient not in the cocktail
+// Get wrong ingredient
 function getWrongIngredient(ingredients) {
-  let wrongIngredient;
-  do {
-    wrongIngredient = wrongIngredients[Math.floor(Math.random() * wrongIngredients.length)];
-  } while (ingredients.includes(wrongIngredient));
-  return wrongIngredient;
+  const availableIngredients = allIngredients.filter(i => !ingredients.includes(i));
+  return availableIngredients[Math.floor(Math.random() * availableIngredients.length)];
 }
 
-// Start the quiz
-function startQuiz() {
-  startScreen.classList.add("hidden");
-  quizScreen.classList.remove("hidden");
-  questions = generateQuestions();
-  currentQuestionIndex = 0;
-  score = 0;
-  hintUsed = false;
-  quizStartTime = Date.now();
-  showQuestion();
-}
-
-// Generate questions based on category
-function generateQuestions() {
-  let pool = [...kenyanCocktails];
-  if (selectedCategory === "non-alcoholic") {
-    pool = pool.filter(drink => !drink.alcoholic);
-  } else if (selectedCategory === "alcoholic") {
-    pool = pool.filter(drink => drink.alcoholic);
-  }
-
+// Generate questions
+async function generateQuestions() {
   const generatedQuestions = [];
+  const questionCount = selectedMode === "local" ? 5 : 3; // Fewer API questions
   
-  pool.forEach(cocktail => {
-    // Image recognition question
-    if (selectedCategory === "image" || selectedCategory === "all") {
-      generatedQuestions.push({
-        type: "image",
-        text: `What is this cocktail called?`,
-        options: [
-          ...kenyanCocktails.filter(d => d.name !== cocktail.name)
-                           .map(d => d.name)
-                           .slice(0, 3),
-          cocktail.name
-        ].sort(() => Math.random() - 0.5),
-        correctAnswer: cocktail.name,
-        image: cocktail.image
-      });
-    }
+  for (let i = 0; i < questionCount; i++) {
+    const cocktail = await fetchRandomCocktail();
     
-    // Ingredients question
-    if (selectedCategory === "ingredients" || selectedCategory === "all") {
-      const wrongIngredient = getWrongIngredient(cocktail.ingredients);
+    // Get ingredients
+    const ingredients = [];
+    for (let i = 1; i <= 15; i++) {
+      if (cocktail[`strIngredient${i}`]) {
+        ingredients.push(cocktail[`strIngredient${i}`]);
+      }
+    }
+
+    // Ingredient question
+    if (ingredients.length >= 3) {
+      const wrongIngredient = getWrongIngredient(ingredients);
       generatedQuestions.push({
         type: "ingredient",
-        text: `Which ingredient is NOT in a ${cocktail.name}?`,
-        options: [
-          ...cocktail.ingredients.slice(0, 3),
-          wrongIngredient
-        ].sort(() => Math.random() - 0.5),
+        text: `Which ingredient is NOT in a ${cocktail.strDrink}?`,
+        options: [...ingredients.slice(0, 3), wrongIngredient].sort(() => Math.random() - 0.5),
         correctAnswer: wrongIngredient,
-        image: cocktail.image
+        image: cocktail.strDrinkThumb || `assets/images/fallback.jpg`
       });
     }
-    
-    // Cocktail Glassware question
-    if (selectedCategory === "glassware" || selectedCategory === "all") {
-      generatedQuestions.push({
-        type: "glass",
-        text: `Which glass is used for a ${cocktail.name}?`,
-        options: getUniqueGlassOptions(cocktail.glass),
-        correctAnswer: cocktail.glass,
-        image: cocktail.image
-      });
-    }
-    
-    // Alcoholic question
-    if (selectedCategory === "alcoholic" || selectedCategory === "all") {
-      generatedQuestions.push({
-        type: "alcoholic",
-        text: `Is ${cocktail.name} alcoholic?`,
-        options: ["Yes", "No"],
-        correctAnswer: cocktail.alcoholic ? "Yes" : "No",
-        image: cocktail.image
-      });
-    }
-  });
+
+    // Glass question
+    generatedQuestions.push({
+      type: "glass",
+      text: `Which glass is used for a ${cocktail.strDrink}?`,
+      options: getUniqueGlassOptions(cocktail.strGlass),
+      correctAnswer: cocktail.strGlass,
+      image: cocktail.strDrinkThumb || `assets/images/fallback.jpg`
+    });
+  }
   
-  return generatedQuestions.sort(() => Math.random() - 0.5).slice(0, 10);
+  return generatedQuestions;
 }
 
-// Show current question
+
+function showLoadingScreen() {
+  startScreen.classList.add("hidden");
+  quizScreen.classList.add("hidden");
+  resultsScreen.classList.add("hidden");
+  loadingScreen.classList.remove("hidden");
+}
+
+
+function hideLoadingScreen() {
+  loadingScreen.classList.add("hidden");
+}
+
+// Start questions
+async function startQuiz() {
+  showLoadingScreen();
+  
+  try {
+    questions = await generateQuestions();
+    
+    if (questions.length === 0) {
+      throw new Error("No questions generated");
+    }
+    
+    currentQuestionIndex = 0;
+    score = 0;
+    hintUsed = false;
+    quizStartTime = Date.now();
+    hideLoadingScreen();
+    showQuestion();
+  } catch (error) {
+    console.error("Start error:", error);
+    loadingText.textContent = "Loading failed. Using backup questions...";
+    
+questions = [
+    {
+      type: "ingredient",
+      text: "Which ingredient is NOT in a Dawa?",
+      options: ["Vodka", "Honey", "Lime", "Soda"],
+      correctAnswer: "Soda",
+      image: "assets/images/dawa.jpeg"
+    },
+    {
+      type: "glass",
+      text: "Which glass is used for Masala Chai?",
+      options: ["Tea Cup", "Martini Glass", "Highball Glass", "Shot Glass"],
+      correctAnswer: "Tea Cup",
+      image: "assets/images/masala-chai.webp"
+    },
+    {
+      type: "ingredient",
+      text: "Which ingredient is NOT in Virgin Dawa?",
+      options: ["Honey", "Lime", "Vodka", "Soda Water"],
+      correctAnswer: "Vodka",
+      image: "assets/images/virgin-dawa.jpeg"
+    }
+  ];
+    
+    setTimeout(() => {
+      hideLoadingScreen();
+      showQuestion();
+    }, 1000);
+  }
+}
+
+
 function showQuestion() {
-  clearInterval(timer);
-  timeRemaining = 15;
-  hintUsed = false;
-  hintBtn.disabled = false;
-  hintBtn.textContent = "Get Hint";
+  const question = questions[currentQuestionIndex];
+  questionEl.textContent = question.text;
+  cocktailImage.src = question.image;
+  cocktailImage.alt = question.text;
   
-  const currentQuestion = questions[currentQuestionIndex];
-  questionEl.textContent = currentQuestion.text;
+  // Clear previous options
+  optionsContainer.innerHTML = '';
   
-  // Set image
-  cocktailImage.src = `assets/images/${currentQuestion.image}`;
-  cocktailImage.alt = `${currentQuestion.text} image`;
-  
-  // Create options
-  optionsContainer.innerHTML = "";
-  currentQuestion.options.forEach(option => {
-    const button = document.createElement("button");
+  // Create new options
+  question.options.forEach(option => {
+    const button = document.createElement('button');
     button.textContent = option;
-    button.classList.add("option-btn");
-    button.addEventListener("click", () => selectAnswer(option));
+    button.classList.add('option-btn');
+    button.addEventListener('click', () => selectAnswer(option));
     optionsContainer.appendChild(button);
   });
   
-  // Update UI
-  scoreEl.textContent = `Score: ${score}`;
-  nextBtn.style.display = "none";
-  timerEl.textContent = `Time: ${timeRemaining}s`;
+  // Reset timer and UI
+  timeRemaining = 15;
+  updateTimer();
+  startTimer();
+  nextBtn.style.display = 'none';
+  hintUsed = false;
   
-  // Start timer
-  timer = setInterval(updateTimer, 1000);
+  // Show quiz screen
+  startScreen.classList.add('hidden');
+  resultsScreen.classList.add('hidden');
+  quizScreen.classList.remove('hidden');
+  scoreEl.textContent = `Score: ${score}`;
 }
 
-// Update timer
+// Start timer
+function startTimer() {
+  clearInterval(timer);
+  timer = setInterval(() => {
+    timeRemaining--;
+    updateTimer();
+    
+    if (timeRemaining <= 0) {
+      clearInterval(timer);
+      timeUp();
+    }
+  }, 1000);
+}
+
+// Update timer display
 function updateTimer() {
-  timeRemaining--;
   timerEl.textContent = `Time: ${timeRemaining}s`;
-  if (timeRemaining <= 0) {
-    clearInterval(timer);
-    handleTimeOut();
+  if (timeRemaining <= 5) {
+    timerEl.style.color = 'red';
+  } else {
+    timerEl.style.color = 'inherit';
   }
 }
 
-// Handle timeout
-function handleTimeOut() {
-  const currentQuestion = questions[currentQuestionIndex];
-  const options = document.querySelectorAll(".option-btn");
+// Handle time up
+function timeUp() {
+  const options = document.querySelectorAll('.option-btn');
+  options.forEach(option => {
+    option.disabled = true;
+  });
+  nextBtn.style.display = 'block';
+}
+
+// Handle answer selection
+function selectAnswer(selectedAnswer) {
+  clearInterval(timer);
+  const question = questions[currentQuestionIndex];
+  const options = document.querySelectorAll('.option-btn');
   
   options.forEach(option => {
     option.disabled = true;
-    if (option.textContent === currentQuestion.correctAnswer) {
-      option.classList.add("correct");
+    
+    if (option.textContent === question.correctAnswer) {
+      option.classList.add('correct');
+    } else if (option.textContent === selectedAnswer && selectedAnswer !== question.correctAnswer) {
+      option.classList.add('wrong');
     }
   });
   
-  nextBtn.style.display = "block";
+  if (selectedAnswer === question.correctAnswer) {
+    score += hintUsed ? 5 : 10; // this removes points if you use the hint option
+  }
+  
+  scoreEl.textContent = `Score: ${score}`;
+  nextBtn.style.display = 'block';
 }
 
 // Show hint
 function showHint() {
   if (hintUsed) return;
   
-  const currentQuestion = questions[currentQuestionIndex];
-  let hint = "";
+  const question = questions[currentQuestionIndex];
+  const options = document.querySelectorAll('.option-btn');
   
-  switch(currentQuestion.type) {
-    case "ingredient":
-      hint = `Contains: ${currentQuestion.options
-        .filter(opt => opt !== currentQuestion.correctAnswer)
-        .slice(0, 2)
-        .join(", ")}`;
-      break;
-    case "glass":
-      hint = `It's a ${currentQuestion.correctAnswer.toLowerCase()}`;
-      break;
-    case "image":
-      hint = `Starts with: ${currentQuestion.correctAnswer.charAt(0)}`;
-      break;
-    default:
-      hint = "Think carefully!";
-  }
-  
-  alert(`Hint: ${hint}`);
-  hintUsed = true;
-  hintBtn.textContent = "Hint Used";
-  hintBtn.disabled = true;
-}
-
-// Handle answer selection
-function selectAnswer(selectedOption) {
-  clearInterval(timer);
-  const currentQuestion = questions[currentQuestionIndex];
-  const options = document.querySelectorAll(".option-btn");
-  
+  // Remove two incorrect options
+  let removed = 0;
   options.forEach(option => {
-    option.disabled = true;
-    if (option.textContent === currentQuestion.correctAnswer) {
-      option.classList.add("correct");
-    } else if (option.textContent === selectedOption) {
-      option.classList.add("wrong");
+    if (removed < 2 && 
+        option.textContent !== question.correctAnswer && 
+        !option.classList.contains('disabled-hint')) {
+      option.style.visibility = 'hidden';
+      option.classList.add('disabled-hint');
+      removed++;
     }
   });
   
-  // Update score if correct
-  if (selectedOption === currentQuestion.correctAnswer) {
-    score++;
-    scoreEl.textContent = `Score: ${score}`;
-  }
-  
-  nextBtn.style.display = "block";
+  hintUsed = true;
 }
 
 // Next question
 function nextQuestion() {
   currentQuestionIndex++;
+  
   if (currentQuestionIndex < questions.length) {
     showQuestion();
   } else {
-    endQuiz();
+    showResults();
   }
 }
 
-// End quiz
-function endQuiz() {
-  clearInterval(timer);
-  quizScreen.classList.add("hidden");
-  resultsScreen.classList.remove("hidden");
-  
+// Show results
+function showResults() {
   totalTime = Math.floor((Date.now() - quizStartTime) / 1000);
-  const minutes = Math.floor(totalTime / 60);
-  const seconds = totalTime % 60;
+  finalScoreEl.textContent = `Your final score: ${score}/${questions.length * 10}`;
+  totalTimeEl.textContent = `Total time: ${totalTime} seconds`;
   
-  totalTimeEl.textContent = `Total time: ${minutes}m ${seconds}s`;
-  
-  // Add emoji based on your final score
-  let emoji = "😐";
-  if (score === questions.length) emoji = "🎉";
-  else if (score >= questions.length/2) emoji = "👍";
-  
-  finalScoreEl.textContent = `Score: ${score}/${questions.length} ${emoji}`;
+  quizScreen.classList.add('hidden');
+  resultsScreen.classList.remove('hidden');
 }
 
-// Restart quiz
+// Restart the questions
 function restartQuiz() {
-  resultsScreen.classList.add("hidden");
   startQuiz();
 }
 
 // Go to main menu
 function goToMainMenu() {
-  resultsScreen.classList.add("hidden");
-  startScreen.classList.remove("hidden");
-  // Reset category selection
-  categorySelect.value = "all";
-  selectedCategory = "all";
+  resultsScreen.classList.add('hidden');
+  startScreen.classList.remove('hidden');
 }
 
-// Initialize the quiz when loaded
+// Initialize the questions
 document.addEventListener("DOMContentLoaded", initQuiz);
